@@ -1,38 +1,28 @@
-import { faker } from '@faker-js/faker'
 import express from 'express'
+import { ProductsService } from '../services/products.js'
 const router = express.Router()
+const service = new ProductsService()
 
 // products
 router.get('/', (req, res) => {
-  const { quantity } = req.query
-  const size = quantity || 10
-  const products = []
-  for (let index = 0; index < size; index++) {
-    products.push({
-      name: faker.commerce.productName(),
-      price: parseInt(faker.commerce.price()),
-      image: faker.image.url()
-    })
-  }
-  res.json(products)
+  res.json(service.find())
 })
 // params
 router.get('/:id', (req, res) => {
-  const { id } = req.params
-
-  res.json({
-    id,
-    name: 'product name',
-    price: 666
-  })
+  const { id } = req.params 
+  const product = service.findOne(id)
+  if (product) {
+    res.status(200).json(product)
+  } else {
+    res.status(404).json({
+      message: 'not found'
+    })
+  }
 })
 // create product
 router.post('/', (req, res) => {
   const body = req.body
-  res.json({
-    message: 'created',
-    data: body
-  })
+  res.status(201).json(service.create(body))
 })
 
 router.put('/:id', (req, res) => {
@@ -48,19 +38,33 @@ router.put('/:id', (req, res) => {
 router.patch('/:id', (req, res) => {
   const body = req.body
   const { id } = req.params
-  res.json({
-    message: 'product partial updated',
-    data: body,
-    id
-  })
+  try {
+    service.update(id, body)
+    res.status(202).json({
+      message: 'product partial updated',
+      data: service.update(id, body)
+    })
+  } catch (e) {
+    res.status(404).json({
+      message: 'not found'
+    })
+    console.log(e.message)
+  }
 })
 
 router.delete('/:id', (req, res) => {
   const { id } = req.params
-  res.json({
-    message: 'product deleted',
-    id
-  })
+  try {
+    res.json({
+      message: 'product deleted',
+      data: service.delete(id)
+    })
+  } catch (e) {
+    res.status(404).json({
+      message: 'not found'
+    })
+    console.log(e.message)
+  }
 })
 
 export { router }
